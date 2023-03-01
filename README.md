@@ -4,7 +4,7 @@ Clone the repo locally:
 
 ```sh
 git clone https://github.com/pratamashooter/final-project-pemweb-api.git
-cd flavours-api
+cd final-project-pemweb-api.git
 ```
 
 Install PHP dependencies:
