@@ -138,7 +138,7 @@ class ProductController extends Controller
 
             $product->delete();
 
-            return ResponseFormatter::error($product, "Delete success", 422);
+            return ResponseFormatter::success($product, "Delete success");
         } catch (QueryException $error) {
             return ResponseFormatter::error($error, "Ups Something Wrong");
         }
