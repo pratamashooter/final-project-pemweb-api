@@ -147,7 +147,7 @@ class ProductController extends Controller
         $data = base64_decode($photo);
         $file = PRODUCT_PATH . '/' . 'product-' . uniqid() . '.png';
 
-        if (is_dir(public_path('Products')) == false) {
+        if (is_dir(public_path('products')) == false) {
             mkdir(public_path('products'));
         }
 
