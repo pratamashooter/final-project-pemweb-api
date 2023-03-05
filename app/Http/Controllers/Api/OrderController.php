@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Api\Order;
+use App\Models\Api\Product;
+use Illuminate\Http\Request;
+use App\Models\Api\OrderProduct;
 use App\Helpers\ResponseFormatter;
 use App\Http\Controllers\Controller;
-use App\Models\Api\Order;
-use App\Models\Api\OrderProduct;
 use Illuminate\Database\QueryException;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
@@ -16,7 +17,7 @@ class OrderController extends Controller
     {
         try {
             $search = request()->search;
-            $data = Order::when(request()->search !== null, function ($query) use($search) {
+            $data = Order::when(request()->search !== null, function ($query) use ($search) {
                 $query->where('code', 'LIKE', "%{$search}%");
             })->with('order_product.product')->get();
 
@@ -46,7 +47,7 @@ class OrderController extends Controller
         try {
 
             $store = Order::create([
-                'code' => 'OR'.time(),
+                'code' => 'OR' . time(),
                 'cashier_name' => request()->cashier_name,
                 'customer_name' => request()->customer_name,
                 'total' => request()->total,
@@ -54,7 +55,7 @@ class OrderController extends Controller
                 'change' => request()->change,
             ]);
 
-            $product_id = request()->product_id;            
+            $product_id = request()->product_id;
             foreach ($product_id as $key => $value) {
                 OrderProduct::create([
                     'order_id' => $store->id,
@@ -62,17 +63,23 @@ class OrderController extends Controller
                     'qty' => request()->qty[$key],
                     'price' => request()->price[$key],
                     'total' => request()->total_price[$key],
-                ]);                
+                ]);
+
+                // kurangi product
+                $product = Product::find($value);
+                $product->update([
+                    'stock' => $product->stock - request()->qty[$key]
+                ]);
             }
 
-        return ResponseFormatter::success($store, "Store success");
+            return ResponseFormatter::success($store, "Store success");
         } catch (QueryException $error) {
             return ResponseFormatter::error($error, "Ups Something Wrong");
         }
     }
 
     public function update($id)
-    {        
+    {
         $validation = Validator::make(request()->all(), [
             'cashier_name' => 'required',
             'customer_name' => 'required',
@@ -87,7 +94,7 @@ class OrderController extends Controller
             $order = Order::find($id);
             if ($order == null) {
                 return ResponseFormatter::error([], "Order not Found", 422);
-            }            
+            }
 
             $store = $order->update([
                 'cashier_name' => request()->cashier_name,
@@ -97,7 +104,7 @@ class OrderController extends Controller
                 'change' => request()->change,
             ]);
 
-            
+
             OrderProduct::where('order_id', $id)->delete();
             $product_id = request()->product_id;
             foreach ($product_id as $key => $value) {
@@ -107,7 +114,7 @@ class OrderController extends Controller
                     'qty' => request()->qty[$key],
                     'price' => request()->price[$key],
                     'total' => request()->total[$key],
-                ]);                
+                ]);
             }
 
             return ResponseFormatter::success($order, "Update success");
@@ -122,7 +129,7 @@ class OrderController extends Controller
             $order = Order::find($id);
             if ($order == null) {
                 return ResponseFormatter::error([], "Order not Found", 422);
-            }            
+            }
 
             OrderProduct::where('order_id', $id)->delete();
             $order->delete();
