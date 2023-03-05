@@ -16,7 +16,7 @@ class CreateProductsTable extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('name', 75);
-            $table->string('image', 150);
+            $table->string('image', 150)->nullable();
             $table->enum("type", ["SANDANG", "PANGAN", "PAKAN"]);
             $table->string("brand", 45);
             $table->integer("stock");

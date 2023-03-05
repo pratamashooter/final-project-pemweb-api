@@ -14,8 +14,9 @@ class ProductController extends Controller
     public function list()
     {
         try {
-            $data = Product::when(request()->search !== null, function ($query) {
-                $query->where('name', request()->search);
+            $search = request()->search;
+            $data = Product::when($search != null, function ($query) use ($search) {
+                $query->where('name', 'LIKE', "%{$search}%");
             })->get();
 
             // if data kosong
@@ -47,6 +48,7 @@ class ProductController extends Controller
                 $image = request()->file('image');
                 $image_name = $image->hashName();
                 $image->storeAs('public/products', $image_name);
+                $image_name = url('') . '/storage/products/' . $image_name;
             }
 
             $store = Product::create([
@@ -83,14 +85,20 @@ class ProductController extends Controller
             }
 
             if (request()->file('image') != null || request()->file('image') != "") {
+                // dapatkan nama image
+                $image = explode('/', $product->image);
+                $image_name = $image[3] . '/' . $image[4] . '/' . $image[5];
+                $image_delete_str = 'public/' . $image[4] . '/' . $image[5];
+
                 // hapus gambar
-                if (file_exists(public_path('storage/products/' . $product->image)) == true) {
-                    Storage::disk('local')->delete('public/products/' . $product->image);
+                if (file_exists(public_path($image_name)) == true) {
+                    Storage::disk('local')->delete($image_delete_str);
                 }
 
                 $image = request()->file('image');
-                $image_name = $image->hashName();
+                $image_name =  $image->hashName();
                 $image->storeAs('public/products', $image_name);
+                $image_name = url('') . '/storage/products/' . $image_name;
             } else {
                 $image_name = $product->image;
             }
@@ -118,9 +126,14 @@ class ProductController extends Controller
                 return ResponseFormatter::error([], "Product not Found", 422);
             }
 
+            // dapatkan nama image
+            $image = explode('/', $product->image);
+            $image_name = $image[3] . '/' . $image[4] . '/' . $image[5];
+            $image_delete_str = 'public/' . $image[4] . '/' . $image[5];
+
             // hapus gambar
-            if (file_exists(public_path('storage/products/' . $product->image)) == true) {
-                Storage::disk('local')->delete('public/products/' . $product->image);
+            if (file_exists(public_path($image_name)) == true) {
+                Storage::disk('local')->delete($image_delete_str);
             }
 
             $product->delete();
