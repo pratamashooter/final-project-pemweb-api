@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Api\Product;
+use Illuminate\Support\Str;
+use App\Helpers\ResponseFormatter;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\QueryException;
-use App\Helpers\ResponseFormatter;
-use App\Models\Api\Product;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -46,9 +47,7 @@ class ProductController extends Controller
             $image_name = null;
             if (request()->file('image') != null || request()->file('image') != "") {
                 $image = request()->file('image');
-                $image_name = $image->hashName();
-                $image->storeAs('public/products', $image_name);
-                $image_name = url('') . '/storage/products/' . $image_name;
+                $image_name = $this->uploadImage($image);
             }
 
             $store = Product::create([
@@ -87,18 +86,15 @@ class ProductController extends Controller
             if (request()->file('image') != null || request()->file('image') != "") {
                 // dapatkan nama image
                 $image = explode('/', $product->image);
-                $image_name = $image[3] . '/' . $image[4] . '/' . $image[5];
-                $image_delete_str = 'public/' . $image[4] . '/' . $image[5];
+                $image_delete_str = $image[3] . '/' . $image[4];
 
                 // hapus gambar
-                if (file_exists(public_path($image_name)) == true) {
-                    Storage::disk('local')->delete($image_delete_str);
+                if (file_exists($image_delete_str) == true) {
+                    unlink($image_delete_str);
                 }
 
-                $image = request()->file('image');
-                $image_name =  $image->hashName();
-                $image->storeAs('public/products', $image_name);
-                $image_name = url('') . '/storage/products/' . $image_name;
+                $image_file = request()->file('image');
+                $image_name = $this->uploadImage($image_file);
             } else {
                 $image_name = $product->image;
             }
@@ -128,12 +124,11 @@ class ProductController extends Controller
 
             // dapatkan nama image
             $image = explode('/', $product->image);
-            $image_name = $image[3] . '/' . $image[4] . '/' . $image[5];
-            $image_delete_str = 'public/' . $image[4] . '/' . $image[5];
+            $image_delete_str = $image[3] . '/' . $image[4];
 
             // hapus gambar
-            if (file_exists(public_path($image_name)) == true) {
-                Storage::disk('local')->delete($image_delete_str);
+            if (file_exists($image_delete_str) == true) {
+                unlink($image_delete_str);
             }
 
             $product->delete();
@@ -142,5 +137,25 @@ class ProductController extends Controller
         } catch (QueryException $error) {
             return ResponseFormatter::error($error, "Ups Something Wrong");
         }
+    }
+
+    public function uploadImage($gambar)
+    {
+        $photo = base64_encode(file_get_contents($gambar->path()));
+
+        define("PRODUCT_PATH", 'products');
+        $data = base64_decode($photo);
+        $file = PRODUCT_PATH . '/' . 'product-' . uniqid() . '.png';
+
+        if (is_dir(public_path('Products')) == false) {
+            mkdir(public_path('products'));
+        }
+
+        // simpan gambar
+        file_put_contents($file, $data);
+
+        $file_image_name = url('') . '/' . $file;
+
+        return $file_image_name;
     }
 }
